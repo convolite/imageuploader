@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Image Uploader</title>
+   <style>
+       body {
+           font-family: Arial, sans-serif;
+           text-align: center;
+           padding: 20px;
+       }
+
+       h1 {
+           color: #333;
+       }
+
+       input[type="file"] {
+           margin-bottom: 10px;
+       }
+
+       button {
+           background-color: #4CAF50;
+           color: white;
+           padding: 10px 20px;
+           border: none;
+           cursor: pointer;
+       }
+
+       .result {
+           margin-top: 20px;
+           padding: 20px;
+           background-color: #f2f2f2;
+           border-radius: 5px;
+           text-align: left;
+       }
+
+       .result h2 {
+           color: #333;
+       }
+
+       .result p {
+           margin: 5px 0;
+       }
+
+       .result a {
+           color: #4CAF50;
+           text-decoration: none;
+       }
+
+       .preview {
+           max-width: 200px;
+           max-height: 200px;
+           margin-bottom: 10px;
+       }
+
+       .copy-button {
+           background-color: #4CAF50;
+           color: white;
+           border: none;
+           padding: 5px 10px;
+           cursor: pointer;
+           margin-left: 10px;
+       }
+       .my-images {
+           background-color: #4CAF50;
+           color: white;
+           border: none;
+           padding: 5px 10px;
+           cursor: pointer;
+           margin-left: 10px;
+           position: fixed;
+           top: 10px;
+           right: 10px;
+       }
+   </style>
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+   <h1>Image Uploader</h1>
+   <input type="file" id="imageInput" accept="image/*" />
+   <button onclick="uploadImage()">Upload Image</button>
+   <div id="result" class="result"></div>
+   <script>
+       let userId = localStorage.getItem('idNumber') || '0';
+       let idNumber = localStorage.getItem('idNumber');
+
+       if (idNumber && idNumber !== '0') {
+           const myImagesBtn = document.createElement('a');
+           myImagesBtn.classList.add('my-images');
+           myImagesBtn.textContent = 'My Images';
+           myImagesBtn.href = 'my-images.html';
+           document.body.appendChild(myImagesBtn);
+       } else {
+           const loginBtn = document.createElement('button');
+           loginBtn.classList.add('log-in');
+           loginBtn.textContent = 'Log-in!';
+           loginBtn.onclick = () => window.location.href = 'log-in.html';
+           document.body.appendChild(loginBtn);
+
+           const signUpBtn = document.createElement('button');
+           signUpBtn.classList.add('sign-up');
+           signUpBtn.textContent = 'Sign-up!';
+           signUpBtn.onclick = () => window.location.href = 'sign-up.html';
+           document.body.appendChild(signUpBtn);
+       }
+
+       function uploadImage() {
+           const file = document.getElementById('imageInput').files[0];
+           const formData = new FormData();
+           formData.append('image', file);
+
+           const apiUrl = 'https://api.imgbb.com/1/upload?key=9498bf8da3ec348c0512a97edd9666c0';
+
+           fetch(apiUrl, {
+               method: 'POST',
+               body: formData
+           })
+           .then(response => response.json())
+           .then(data => {
+               const resultDiv = document.getElementById('result');
+               if (data.success) {
+                   const dateUpload = new Date().toLocaleString() || '0';
+                   getIP(data.data.url, dateUpload);
+                   resultDiv.innerHTML = `
+                       <h2>Image Upload Successful</h2>
+                       <img class="preview" src="${data.data.url}" alt="Uploaded Image">
+                       <p>ID: ${data.data.id || '0'}</p>
+                       <p>Title: ${data.data.title || 'Untitled'}</p>
+                       <p>URL: <a href="${data.data.url}" target="_blank">${data.data.url}</a> <button class="copy-button" onclick="copyText('${data.data.url}')">Copy Text</button></p>
+                       <p>Display URL: <a href="${data.data.display_url}" target="_blank">${data.data.display_url}</a></p>
+                       <p>Width: ${data.data.width || '0'}</p>
+                       <p>Height: ${data.data.height || '0'}</p>
+                       <p>Size: ${data.data.size || '0'} bytes</p>
+                       <p>Time: ${data.data.time || '0'}</p>
+                       <p>Expiration: ${data.data.expiration || '0'}</p>
+                   `;
+               } else {
+                   resultDiv.innerHTML = `<h2>Error</h2><p>${data.error.message}</p>`;
+               }
+           })
+           .catch(error => {
+               const resultDiv = document.getElementById('result');
+               resultDiv.innerHTML = `<h2>Error</h2><p>${error}</p>`;
+           });
+       }
+
+       function getIP(imageLink, dateUpload) {
+           fetch('https://api.ipify.org?format=json')
+               .then(response => response.json())
+               .then(data => {
+                   const ipAddress = data.ip || '0';
+                   sendDataToSheet(userId, ipAddress, imageLink, dateUpload);
+               })
+               .catch(error => {
+                   console.error('Error fetching IP address:', error);
+                   sendDataToSheet(userId, '0', imageLink, dateUpload);
+               });
+       }
+
+       function sendDataToSheet(id, ipAddress, imageLink, dateUpload) {
+           $.ajax({
+               url: "https://api.apispreadsheets.com/data/GfyXHQVvG9s2asm3/",
+               type: "post",
+               data: {
+                   id: id,
+                   "ip-address": ipAddress,
+                   "image-link": imageLink,
+                   "date-upload": dateUpload
+               },
+               success: function () {
+                   console.log("Data sent to Google Sheet successfully!");
+               },
+               error: function () {
+                   console.error("Error sending data to Google Sheet.");
+               }
+           });
+       }
+
+       function copyText(text) {
+           navigator.clipboard.writeText(text)
+               .then(() => {
+                   alert("Text copied to clipboard: " + text);
+               })
+               .catch(err => {
+                   console.error('Failed to copy text: ', err);
+               });
+       }
+   </script>
+</body>
+</html>

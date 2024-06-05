@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up Page</title>
+    <style> @import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+        }
+
+        .container {
+            max-width: 500px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border: none;
+    overflow: hidden;
+    position: absolute; 
+    top: 20%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-family: 'Montserrat', sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+        }
+        </style>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+    <script>
+        let ipAddress, dateCreated, uniqueNumber;
+
+        function getIP(json) {
+            ipAddress = json.ip;
+        }
+
+        function generateUniqueNumber(existingNumbers) {
+            let number = Math.floor(100000 + Math.random() * 900000).toString();
+            if (existingNumbers.includes(number)) {
+                return generateUniqueNumber(existingNumbers);
+            }
+            return number;
+        }
+    </script>
+    <script type="application/javascript" src="https://api.ipify.org?format=jsonp&callback=getIP"></script>
+    <script>
+        function SubForm() {
+    const username = $("#username").val();
+    const email = $("#email").val();
+    const password = $("#password").val();
+    const phoneNumber = $("#phone-number").val();
+    const gender = $("#gender").val();
+    const emailAds = $("#email-ads").is(":checked");
+    const termsAccepted = $("#terms").is(":checked");
+
+    dateCreated = new Date().toLocaleString();
+
+    const emailRegex = /^[^\s@]+@(gmail|yahoo|hotmail|outlook|aol|icloud|protonmail|zoho|yandex|gmx|fastmail|tutanota)\.(com|net|org|edu)$/i;
+
+    if (username.length >= 3 && username.length <= 25 && email && password && gender && termsAccepted && emailRegex.test(email)) {
+        fetch("https://api.apispreadsheets.com/data/pSIUyZDNltcJecjN/")
+            .then(res => {
+                if (res.status === 200) {
+                    res.json().then(data => {
+                        const existingAccounts = data.data;
+                        const existingNumbers = existingAccounts.map(account => account["id-number"]);
+                        const emailExists = existingAccounts.some(account => account.email === email);
+
+                        if (emailExists) {
+                            alert("An account with this email already exists.");
+                        } else {
+                            uniqueNumber = generateUniqueNumber(existingNumbers);
+                            submitForm(email, password, phoneNumber);
+                        }
+                    }).catch(err => console.log(err));
+                } else {
+                    alert("Error fetching existing accounts.");
+                }
+            })
+            .catch(err => console.log(err));
+    } else {
+        alert("Please complete all required fields and ensure the email is valid, and the username is between 3 and 25 characters.");
+    }
+}
+
+function submitForm(email, password, phoneNumber) {
+    const formData = $("#myForm").serializeArray().concat([
+        { name: "ip-address", value: ipAddress },
+        { name: "date-created", value: dateCreated },
+        { name: "id-number", value: uniqueNumber }
+    ]);
+
+    if (phoneNumber) {
+        formData.push({ name: "phone-number", value: phoneNumber });
+    }
+
+    $.ajax({
+        url: "https://api.apispreadsheets.com/data/pSIUyZDNltcJecjN/",
+        type: "post",
+        data: formData,
+        success: function() {
+            window.location.href = "home.html";
+        },
+        error: function() {
+            alert("There was an error :(");
+        }
+    });
+}
+
+        function submitForm(email, password) {
+            $.ajax({
+                url: "https://api.apispreadsheets.com/data/pSIUyZDNltcJecjN/",
+                type: "post",
+                data: $("#myForm").serializeArray().concat([
+                    { name: "ip-address", value: ipAddress },
+                    { name: "date-created", value: dateCreated },
+                    { name: "id-number", value: uniqueNumber }
+                ]),
+                success: function() {
+                    window.location.href = "home.html";
+                },
+                error: function() {
+                    alert("There was an error :(");
+                }
+            });
+        }
+    </script>
+    <style>
+        /* ... existing styles ... */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sign Up</h1>
+        <form id="myForm">
+            <label for="username">Username (3-25 characters):</label>
+            <input type="text" name="username" id="username" required minlength="3" maxlength="25">
+
+            <label for="email">Email:</label>
+            <input type="text" name="email" id="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" required>
+
+            <label for="phone-number">Phone Number - Optional (Include the country code!):</label>
+            <input type="text" name="phone-number" id="phone-number" required>
+
+            <label for="gender">Gender:</label>
+            <select name="gender" id="gender" required style="font-family: 'Montserrat', sans-serif;">
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+
+
+            <label>
+                <input type="checkbox" id="terms" required> I agree to the terms of service
+            </label>
+        </form>
+        <button onclick="SubForm()" style="width: 100%;">Sign Up</button>
+    </div>
+</body>
+</html>
